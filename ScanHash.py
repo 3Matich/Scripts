@@ -15,7 +15,7 @@ def parse_arguments():
     parser.add_argument("-f", "--input_file", help="Archivo de entrada (txt o csv) que contiene los hashes.")
     parser.add_argument("-o", "--output_file", help="Archivo de salida CSV para guardar los resultados. Si no es csv o no tiene extensión, se agrega la extensión .csv")
     parser.add_argument("-c", "--hash_column", type=int, default=1, help="Número de columna del hash (por defecto: 1).")
-    parser.add_argument("--header", action="store_true", help="Indica si el archivo CSV tiene encabezado.")
+    parser.add_argument("--header", action="store_true", help="Indica si el archivo CSV tiene encabezado. Por defecto se toma que el archivo .csv de entrada no tiene encabezado")
     return parser.parse_args()
 
 
