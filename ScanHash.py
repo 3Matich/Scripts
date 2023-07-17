@@ -1,7 +1,5 @@
 from virus_total_apis import PublicApi
-from hashlib import md5
 import csv
-import requests
 import sys
 import argparse
 
@@ -18,42 +16,25 @@ def parse_arguments():
     return parser.parse_args()
 
 def send_hash_to_virustotal(file_hashes, output_file):
-    
-    headers = {
-        "x-apikey": API_KEY
-    }
     # Crear archivo CSV
     with open(output_file, "w", newline="") as csv_file:
-        fieldnames = ["SHA1","SHA256", "MD5", "Virus Total", "Result Total", "Fortinet", "Trellix"]
+        fieldnames = ["SHA1","SHA256", "MD5", "Virus Total", "Resultado", "Fortinet", "Trellix"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         
         for file_hash in file_hashes:
             url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
-            response = requests.get(url, headers=headers)
+            response = api.get_file_report(file_hash)
             
-            if response.status_code == 200:
-                json_response = response.json()
-                attributes = json_response["data"]["attributes"]
-
-                total_fields = [
-                    'harmless',
-                    'type-unsupported',
-                    'suspicious',
-                    'confirmed-timeout',
-                    'timeout',
-                    'failure',
-                    'malicious',
-                    'undetected'
-                ]
-                total = sum(int(attributes['last_analysis_stats'].get(field, 0)) for field in total_fields)
-
-                sha1 = attributes["sha1"]
-                sha256 = attributes["sha256"]
-                md5 = attributes["md5"]
-                result_total = f"{attributes['last_analysis_stats']['malicious']}/{total}"
-                fortinet_result = attributes["last_analysis_results"]["Fortinet"]["result"]
-                mcafee_result = attributes["last_analysis_results"]["McAfee"]["result"]
+            if response["response_code"] == 200:
+                sha1 = response["results"]["sha1"]
+                sha256 = response["results"]["sha256"]
+                md5 = response["results"]["md5"]
+                positivos = response["results"]["positives"]
+                total = response["results"]["total"]
+                fortinet_result = response["results"]["scans"]["Fortinet"]["result"]
+                mcafee_result = response["results"]["scans"]["McAfee"]["result"]
+                link = response["results"]["permalink"]
 
                 if fortinet_result is None:
                     fortinet_result = "Undetected"
@@ -65,8 +46,8 @@ def send_hash_to_virustotal(file_hashes, output_file):
                     "SHA1": sha1,
                     "SHA256": sha256,
                     "MD5": md5,
-                    "Virus Total": 1,
-                    "Result Total": result_total,
+                    "Virus Total": link,
+                    "Resultado": str(positivos) + '/' + str(total),
                     "Fortinet": fortinet_result,
                     "Trellix": mcafee_result
                 })
@@ -78,13 +59,14 @@ def send_hash_to_virustotal(file_hashes, output_file):
                 if len(file_hash) == 32: md5 = file_hash 
                 if len(file_hash) == 40: sha1 = file_hash 
                 if len(file_hash) == 64: sha256 = file_hash 
+                link = response["results"]["permalink"]
             
                 writer.writerow({
                     "SHA1": sha1,
                     "SHA256": sha256,
                     "MD5": md5,
-                    "Virus Total": 0,
-                    "Result Total": "Unknown",
+                    "Virus Total": link,
+                    "Resultado": "Unknown",
                     "Fortinet": "Undetected",
                     "Trellix": "Undetected"
                 })
