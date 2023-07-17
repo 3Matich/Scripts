@@ -14,7 +14,7 @@ def parse_arguments():
     parser.add_argument("-f", "--input_file", help="Archivo de entrada (txt o csv) que contiene los hashes.")
     parser.add_argument("-o", "--output_file", help="Archivo de salida CSV para guardar los resultados. Siempre se agrega la extensión .csv, por lo que no es necesario agregar una extensión. Si no se ingresa un archivo se genera uno llamado 'Hashes.csv'")
     parser.add_argument("-c", "--hash_column", type=int, default=1, help="Número de columna del hash (por defecto: 1).")
-    parser.add_argument("--header", action="store_true", help="Indica si el archivo CSV tiene encabezado.")
+    parser.add_argument("--header", action="store_true", help="Indica si el archivo CSV tiene encabezado.Por defecto, se considera que el archivo no contiene encabezado.")
     return parser.parse_args()
 
 def send_hash_to_virustotal(file_hashes, output_file):
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     file_path = args.input_file
     
     # Obtiene el archivo de salida del argumento si se proporciona, de lo contrario usa un valor predeterminado
-    output_file = args.output_file or "output.csv"
+    output_file = args.output_file or "Hashes"
     
     # Verifica si el archivo de salida tiene la extensión .csv
     if not output_file.endswith(".csv"):
