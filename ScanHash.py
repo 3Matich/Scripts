@@ -1,7 +1,6 @@
 from virus_total_apis import PublicApi
 from hashlib import md5
 import csv
-import json
 import requests
 import sys
 import argparse
@@ -13,11 +12,10 @@ api = PublicApi(API_KEY)
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Recibe un archivo de entrada tipo txt o csv y escanea hashes y genera un archivo CSV de salida.")
     parser.add_argument("-f", "--input_file", help="Archivo de entrada (txt o csv) que contiene los hashes.")
-    parser.add_argument("-o", "--output_file", help="Archivo de salida CSV para guardar los resultados. Si no es csv o no tiene extensión, se agrega la extensión .csv")
+    parser.add_argument("-o", "--output_file", help="Archivo de salida CSV para guardar los resultados. Siempre se agrega la extensión .csv, por lo que no es necesario agregar una extensión. Si no se ingresa un archivo se genera uno llamado 'Hashes.csv'")
     parser.add_argument("-c", "--hash_column", type=int, default=1, help="Número de columna del hash (por defecto: 1).")
-    parser.add_argument("--header", action="store_true", help="Indica si el archivo CSV tiene encabezado. Por defecto se toma que el archivo .csv de entrada no tiene encabezado")
+    parser.add_argument("--header", action="store_true", help="Indica si el archivo CSV tiene encabezado.")
     return parser.parse_args()
-
 
 def send_hash_to_virustotal(file_hashes, output_file):
     
@@ -26,12 +24,11 @@ def send_hash_to_virustotal(file_hashes, output_file):
     }
     # Crear archivo CSV
     with open(output_file, "w", newline="") as csv_file:
-        fieldnames = ["SHA256", "MD5", "Link", "Result Total", "Fortinet Result", "McAfee Result"]
+        fieldnames = ["SHA1","SHA256", "MD5", "Virus Total", "Result Total", "Fortinet", "Trellix"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         
         for file_hash in file_hashes:
-            #url = url.format(file_hash)
             url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
             response = requests.get(url, headers=headers)
             
@@ -51,23 +48,46 @@ def send_hash_to_virustotal(file_hashes, output_file):
                 ]
                 total = sum(int(attributes['last_analysis_stats'].get(field, 0)) for field in total_fields)
 
-                hash_value = attributes["sha256"]
+                sha1 = attributes["sha1"]
+                sha256 = attributes["sha256"]
                 md5 = attributes["md5"]
-                link = json_response["data"]["links"]["self"]
                 result_total = f"{attributes['last_analysis_stats']['malicious']}/{total}"
                 fortinet_result = attributes["last_analysis_results"]["Fortinet"]["result"]
                 mcafee_result = attributes["last_analysis_results"]["McAfee"]["result"]
+
+                if fortinet_result is None:
+                    fortinet_result = "Undetected"
+
+                if mcafee_result is None:
+                    mcafee_result = "Undetected"
                 
                 writer.writerow({
-                    "SHA256": hash_value,
+                    "SHA1": sha1,
+                    "SHA256": sha256,
                     "MD5": md5,
-                    "Link": link,
+                    "Virus Total": 1,
                     "Result Total": result_total,
-                    "Fortinet Result": fortinet_result,
-                    "McAfee Result": mcafee_result
+                    "Fortinet": fortinet_result,
+                    "Trellix": mcafee_result
                 })
             else:
                 print(f"Error al enviar la solicitud a VirusTotal para el hash: {file_hash}")
+                md5 = ""
+                sha256 = ""
+                sha1 = ""
+                if len(file_hash) == 32: md5 = file_hash 
+                if len(file_hash) == 40: sha1 = file_hash 
+                if len(file_hash) == 64: sha256 = file_hash 
+            
+                writer.writerow({
+                    "SHA1": sha1,
+                    "SHA256": sha256,
+                    "MD5": md5,
+                    "Virus Total": 0,
+                    "Result Total": "Unknown",
+                    "Fortinet": "Undetected",
+                    "Trellix": "Undetected"
+                })
 
 # Lee los hashes de un archivo .txt o .csv
 def read_hashes_from_file(file_path, hash_column, has_header):
