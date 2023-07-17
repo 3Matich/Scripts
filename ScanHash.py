@@ -23,7 +23,6 @@ def send_hash_to_virustotal(file_hashes, output_file):
         writer.writeheader()
         
         for file_hash in file_hashes:
-            url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
             response = api.get_file_report(file_hash)
             
             if response["response_code"] == 200:
