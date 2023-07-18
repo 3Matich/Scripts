@@ -15,5 +15,8 @@ Esto hay que reemplazarlo en la linea 6:
 Reemplazar "Api_Key" por tu key.
 
 ## ScanHash
-El script ScanHash.py toma un archivo .txt o .csv y busca los hashes que tenga ese archivo en Virus Total, generando un nuevo archivo .csv con los detalles de la busqueda incluyendo si este hash es detectado por fortiguard y mcafee.
+El script ScanHash.py toma un archivo .txt o .csv y busca los hashes que tenga ese archivo en Virus Total, generando un nuevo archivo Hashes.csv con los detalles de la busqueda incluyendo si este hash es detectado por fortiguard y mcafee.
 Se puede utilizar la función -h para mas detalles sobre el script
+
+## ScanDomain
+Al igual que el ScanHash, toma un archivo .txt o .csv que contengan dominios y los busca en Virus Total, generando un nuevo archivo Dominios.csv con los detalles de la búsqueda incluyendo si este dominio es detectado por Fortinet y bajo que categoría.
